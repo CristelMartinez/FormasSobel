@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>20 Formas de Sobel</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="titulo">20 Formas de Sobel</div>
+    <div class="resultado">
+        <canvas id="canvas"></canvas>
+        <p>Original</p>
+    </div>
+    <div id="resultados"></div>
+
+    <script type="text/javascript">
+        var image = new Image();
+        image.onload = imageLoaded;
+        image.src = "Al_atleti.jpeg";
+
+        function imageLoaded() {
+            var canvas = document.getElementById("canvas");
+            var ctx = canvas.getContext("2d");
+
+            canvas.width = image.width;
+            canvas.height = image.height;
+
+            ctx.drawImage(image, 0, 0, image.width, image.height);
+
+            blancoNegro(canvas);
+
+            var filtrosSobel = [
+                // Sobel Vertical
+                [
+                    [-1, 0,  1],
+                    [-2, 0,  2],
+                    [-1, 0,  1]
+                ],
+                // Sobel Horizontal
+                [
+                    [-1, -2, -1],
+                    [ 0,  0,  0],
+                    [ 1,  2,  1]
+                ],
+                // Diagonal 45 grados
+                [
+                    [-2, -1, 0],
+                    [-1,  0, 1],
+                    [ 0,  1, 2]
+                ],
+                // Diagonal 135 grados
+                [
+                    [ 0,  1,  2],
+                    [-1,  0,  1],
+                    [-2, -1,  0]
+                ],
+                // Sobel Vertical modificado
+                [
+                    [-1, -1, 0],
+                    [-2,  2, 0],
+                    [ 1,  1, 0]
+                ],
+                // Sobel Horizontal modificado
+                [
+                    [ 0,  1,  1],
+                    [ 0, -2, -2],
+                    [ 0,  1,  1]
+                ],
+                // Filtro con más peso en la columna central
+                [
+                    [ 0,  1,  0],
+                    [ 0,  1,  0],
+                    [ 0,  1,  0]
+                ],
+                // Filtro de Laplaciano
+                [
+                    [ 0, -1,  0],
+                    [-1,  4, -1],
+                    [ 0, -1,  0]
+                ],
+                // Filtro de Prewitt Vertical
+                [
+                    [-1, 0,  1],
+                    [-1, 0,  1],
+                    [-1, 0,  1]
+                ],
+                // Filtro de Prewitt Horizontal
+                [
+                    [-1, -1, -1],
+                    [ 0,  0,  0],
+                    [ 1,  1,  1]
+                ],
+                // Filtro de Scharr Vertical
+                [
+                    [-3, 0,  3],
+                    [-10, 0, 10],
+                    [-3, 0,  3]
+                ],
+                // Filtro de Scharr Horizontal
+                [
+                    [-3, -10, -3],
+                    [ 0,  0,  0],
+                    [ 3,  10,  3]
+                ],
+                // Filtro con más peso en las esquinas
+                [
+                    [ 0, -1,  0],
+                    [-1,  4, -1],
+                    [ 0, -1,  0]
+                ],
+                // Filtro de Roberts Vertical
+                [
+                    [ 0,  0,  0],
+                    [ 0,  1, -1],
+                    [ 0,  0,  0]
+                ],
+                // Filtro de Roberts Horizontal
+                [
+                    [ 0,  0,  0],
+                    [ 0,  1,  0],
+                    [ 0, -1,  0]
+                ],
+                // Filtro con diferente peso en la fila central
+                [
+                    [ 0,  0,  0],
+                    [ 0,  2,  0],
+                    [ 0,  0,  0]
+                ],
+                // Filtro con diferente peso en la columna central
+                [
+                    [ 0,  0,  0],
+                    [ 0,  2,  0],
+                    [ 0,  0,  0]
+                ],
+                // Filtro con peso negativo en la esquina
+                [
+                    [-1,  0,  1],
+                    [ 0,  0,  0],
+                    [ 1,  0, -1]
+                ],
+                // Filtro con peso positivo en la esquina
+                [
+                    [ 1,  0, -1],
+                    [ 0,  0,  0],
+                    [-1,  0,  1]
+                ],
+                // Filtro con un solo peso en el centro
+                [
+                    [ 0,  0,  0],
+                    [ 0,  1,  0],
+                    [ 0,  0,  0]
+                ],
+                // Filtro con un solo peso en la esquina
+                [
+                    [ 1,  0,  0],
+                    [ 0,  0,  0],
+                    [ 0,  0,  0]
+                ],
+                // Filtro con diferentes pesos en la fila y columna central
+                [
+                    [ 0,  0,  0],
+                    [ 0,  2,  0],
+                    [ 0,  0,  0]
+                ],
+                // Filtro con más peso en la esquina
+                [
+                    [ 0, -1,  0],
+                    [-1,  4, -1],
+                    [ 0, -1,  0]
+                ]
+            ];
+
+            aplicarFiltros(canvas, filtrosSobel);
+        }
+
+        function blancoNegro(canvas) {
+            var ctx = canvas.getContext("2d");
+            var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            var pixeles = imgData.data;
+
+            for (var p = 0; p < pixeles.length; p += 4) {
+                var gris = (pixeles[p] + pixeles[p + 1] + pixeles[p + 2]) / 3;
+                pixeles[p] = gris;
+                pixeles[p + 1] = gris;
+                pixeles[p + 2] = gris;
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        function convolucionar(canvasFuente, canvasDestino, sobel) {
+            var ctxFuente = canvasFuente.getContext("2d");
+            var imgDataFuente = ctxFuente.getImageData(0, 0, canvasFuente.width, canvasFuente.height);
+            var pixelesFuente = imgDataFuente.data;
+
+            canvasDestino.width = canvasFuente.width;
+            canvasDestino.height = canvasFuente.height;
+
+            var ctxDestino = canvasDestino.getContext("2d");
+            var imgDataDestino = ctxDestino.getImageData(0, 0, canvasDestino.width, canvasDestino.height);
+            var pixelesDestino = imgDataDestino.data;
+
+            for (var y = 1; y < canvasFuente.height - 1; y++) {
+                for (var x = 1; x < canvasFuente.width - 1; x++) {
+                    var idx = ((y * canvasFuente.width) + x) * 4;
+                    var totalY = 0;
+                    var totalX = 0;
+
+                    for (var kernelY = 0; kernelY < 3; kernelY++) {
+                        for (var kernelX = 0; kernelX < 3; kernelX++) {
+                            var pixel = (y + kernelY - 1) * canvasFuente.width + (x + kernelX - 1);
+                            totalY += sobel[kernelY][kernelX] * pixelesFuente[pixel * 4];
+                            totalX += sobel[kernelY][kernelX] * pixelesFuente[pixel * 4];
+                        }
+                    }
+
+                    var magnitud = Math.sqrt(totalX * totalX + totalY * totalY);
+                    magnitud = Math.min(magnitud, 255);
+
+                    pixelesDestino[idx] = magnitud;
+                    pixelesDestino[idx + 1] = magnitud;
+                    pixelesDestino[idx + 2] = magnitud;
+                    pixelesDestino[idx + 3] = 255; // Alpha
+                }
+            }
+
+            ctxDestino.putImageData(imgDataDestino, 0, 0);
+        }
+
+        function aplicarFiltros(canvasFuente, filtrosSobel) {
+            var resultados = document.getElementById("resultados");
+           
+
+            resultados.innerHTML = ""; // Limpiar resultados previos
+
+            filtrosSobel.forEach((filtro, index) => {
+                var canvasFiltro = document.createElement("canvas");
+                convolucionar(canvasFuente, canvasFiltro, filtro);
+
+                var div = document.createElement("div");
+                div.className = "resultado";
+
+                var img = document.createElement("img");
+                img.src = canvasFiltro.toDataURL();
+                div.appendChild(img);
+
+                var p = document.createElement("p");
+                p.textContent = "Sobel " + (index + 1);
+                div.appendChild(p);
+
+                resultados.appendChild(div);
+            });
+        }
+    </script>
+</body>
+</html>
